@@ -25,6 +25,10 @@ ED::~ED()
     for(int i = 0; i < (int)entries.size(); i ++)
         delete[] entries[i].ptr;
     entries.clear();
+
+    for(int i = 0; i < (int)tries.size(); i ++)
+        delete tries[i];
+    tries.clear();
 }
 
 void ED::readEntries(const char* filename)
@@ -62,10 +66,19 @@ int ED::init(const char* filename)
     }); // 按照字符串长度排序
 
     // build index
-    for(int id = 0; id < (int)entries.size(); id ++)
+    for(int i = 0; i < (int)Qs.size(); i ++)
     {
-        for(int k = 0; k + Q <= entries[id].length; k ++)
-            trie.insert(entries[id].ptr+k, Q)->insert(id);
+        const int Q = Qs[i];
+        Trie<int>* trie = new Trie<int>();
+        
+        for(int id = 0; id < (int)entries.size(); id ++)
+        {
+            for(int k = 0; k + Q <= entries[id].length; k ++)
+                trie->insert(id, entries[id].ptr+k, Q);
+        }
+        trie->adjust();
+
+        tries.push_back(trie);
     }
 
     return SUCCESS;
@@ -75,75 +88,86 @@ int ED::search(const STR& S, int threshold, vector<pair<unsigned, unsigned> > &r
 {
     result.clear();
 
-    const int T = S.length - threshold*Q - Q + 1;
-
-    if (T <= 0)
+    for(int i = 0; i < (int)Qs.size(); i ++)
     {
-        int l = 0, r = entries_ids.size(), mid;
-        while(l < r)
-        {
-            mid = (l+r)/2;
-            if (entries[entries_ids[mid]].length >= S.length - threshold)
-                r = mid;
-            else l = mid + 1;
+        const int Q = Qs[i];
+        const int T = S.length - threshold*Q - Q + 1;
+        if (T > 0) return trieSearch(S, threshold, result, Q, tries[i]);
+    }
+
+    int l = 0, r = entries_ids.size(), mid;
+    while(l < r)
+    {
+        mid = (l+r)/2;
+        if (entries[entries_ids[mid]].length >= S.length - threshold)
+            r = mid;
+        else l = mid + 1;
+    }
+    int s = l;
+
+    l = 0, r = entries_ids.size();
+    while(l < r)
+    {
+        mid = (l+r)/2;
+        if (entries[entries_ids[mid]].length > S.length + threshold)
+            r = mid;
+        else l = mid + 1;
+    }
+    int t = l;
+
+    for(int i = s; i < t; i ++)
+    {
+        int temp = inDistance(S, entries[entries_ids[i]], threshold);
+        if (temp >= 0) result.push_back(make_pair(entries_ids[i], temp));
+    }
+    sort(result.begin(), result.end());
+
+    return SUCCESS;
+}
+
+int ED::trieSearch(const STR& S, int threshold, std::vector<std::pair<unsigned, unsigned> > &result, const int Q, Trie<int>* trie)
+{
+    const int T = S.length - threshold*Q - Q + 1;
+    if (T <= 0) return FAILURE;
+
+    typedef CON3<int, int*, int*> QNode;
+    priority_queue<QNode> que;
+    for(int i = 0; i + Q <= S.length; i ++)
+    {
+        auto x = trie->search(S.ptr+i, Q);
+        if (x.first && x.second) que.push(QNode(*x.first, x.first, x.second));
+    }
+
+    int count = 0, value = -1;
+    while(!que.empty())
+    {
+        auto p = que.top(); que.pop();
+        int v = p.data1;
+        auto it = p.data2;
+        auto end = p.data3;
+        // cerr << "debug : " << v << endl;
+
+        if (v == value) count ++;
+        else {
+            if (value >= v) exit(1);
+            count = 1; value = v;
         }
-        int s = l;
-
-        l = 0, r = entries_ids.size();
-        while(l < r)
+        // cout << "debug : " << value << " " << count << " " << T << endl;
+        if (count == T)
         {
-            mid = (l+r)/2;
-            if (entries[entries_ids[mid]].length > S.length + threshold)
-                r = mid;
-            else l = mid + 1;
+            int temp = inDistance(S, entries[value], threshold);
+            if (temp >= 0) result.push_back(make_pair(value, temp));
         }
-        int t = l;
-
-        for(int i = s; i < t; i ++)
+        
+        it ++;
+        if (it != end)
         {
-            int temp = inDistance(S, entries[entries_ids[i]], threshold);
-            if (temp >= 0) result.push_back(make_pair(entries_ids[i], temp));
-        }
-        sort(result.begin(), result.end());
-
-    } else {
-        vector<set<int>*> list;
-        for(int i = 0; i + Q <= S.length; i ++)
-        {
-            auto x = trie.search(S.ptr+i, Q);
-            if (x) list.push_back(x);
-        }
-
-        priority_queue<CON3<int, set<int>::iterator, set<int>::iterator>> que;
-        int count = 0, value = -1;
-        for(auto x: list) que.push(CON3<int, set<int>::iterator, set<int>::iterator>(*x->begin(), x->begin(), x->end()));
-        while(!que.empty())
-        {
-            auto p = que.top(); que.pop();
-            int v = p.data1;
-            auto it = p.data2;
-            auto end = p.data3;
-
-            if (v == value) count ++;
-            else {
-                if (value >= v) exit(1);
-                count = 1; value = v;
-            }
-            // cout << "debug : " << value << " " << count << " " << T << endl;
-            if (count == T)
-            {
-                int temp = inDistance(S, entries[value], threshold);
-                if (temp >= 0) result.push_back(make_pair(value, temp));
-            }
-            
-            it ++;
-            if (it != end)
-            {
-                que.push(CON3<int, set<int>::iterator, set<int>::iterator>(*it, it, end));
-            }
+            // cerr << "push : " << *it << endl;
+            que.push(QNode(*it, it, end));
         }
     }
-    return SUCCESS;
+
+    return SUCCESS;   
 }
 
 int ED::inDistance(const STR& A, const STR& B, int threshold)
@@ -156,16 +180,16 @@ int ED::inDistance(const STR& A, const STR& B, int threshold)
 
     for(int i=1;i<=n;i++)
     {
-        bool flag = false;
+        // bool flag = false;
         for(int j=max(i-threshold, 1);j<=min(m, i+threshold);j++)
         {
             dp[i][j]=dp[i-1][j-1]+1;
             if(abs(i-1-j)<=threshold)dp[i][j]=min(dp[i][j], dp[i-1][j]+1);
             if(abs(j-1-i)<=threshold)dp[i][j]=min(dp[i][j], dp[i][j-1]+1);
             if(A.ptr[i-1]==B.ptr[j-1])dp[i][j]=min(dp[i][j], dp[i-1][j-1]);
-            flag |= dp[i][j]<=threshold;
+            // flag |= dp[i][j]<=threshold;
         }
-        if (!flag) return -1;
+        // if (!flag) return -1;
     }
 
     return dp[n][m] <= threshold ? dp[n][m] : -1;
