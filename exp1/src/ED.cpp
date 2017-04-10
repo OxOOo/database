@@ -29,10 +29,6 @@ ED::~ED()
         delete[] entries[i].ptr;
     entries.clear();
 
-    for(int i = 0; i < (int)tries.size(); i ++)
-        delete tries[i];
-    tries.clear();
-
     if (times) delete[] times;
     if (last_modified) delete[] last_modified;
     delete[] lists;
@@ -76,17 +72,14 @@ int ED::init(const char* filename)
     for(int i = 0; i < (int)Qs.size(); i ++)
     {
         const int Q = Qs[i];
-        Trie<int>* trie = new Trie<int>();
         
         for(int id = 0; id < (int)entries.size(); id ++)
         {
             for(int k = 0; k + Q <= entries[id].length; k ++)
-                trie->insert(id, entries[id].ptr+k, Q);
+                trie.insert(id, entries[id].ptr+k, Q);
         }
-        trie->adjust();
-
-        tries.push_back(trie);
     }
+    trie.adjust();
 
     times = new int[entries.size()];
     last_modified = new int[entries.size()];
@@ -100,13 +93,13 @@ int ED::init(const char* filename)
 int ED::search(const STR& S, int threshold, vector<pair<unsigned, unsigned> > &result)
 {
     result.clear();
-    result.reserve(BUFFER_SIZE);
+    result.reserve(BUFFER_SIZE*10);
 
     for(int i = 0; i < (int)Qs.size(); i ++)
     {
         const int Q = Qs[i];
         const int T = S.length - threshold*Q - Q + 1;
-        if (T > 0) return trieSearch(S, threshold, result, Q, tries[i]);
+        if (T > 0) return trieSearch(S, threshold, result, Q, &trie);
     }
 
     int l = 0, r = entries_ids.size(), mid;
@@ -199,16 +192,13 @@ int ED::inDistance(const STR& A, const STR& B, int threshold)
 
     for(int i=1;i<=n;i++)
     {
-        // bool flag = false;
         for(int j=max(i-threshold, 1);j<=min(m, i+threshold);j++)
         {
             dp[i][j]=dp[i-1][j-1]+1;
             if(abs(i-1-j)<=threshold)dp[i][j]=min(dp[i][j], dp[i-1][j]+1);
             if(abs(j-1-i)<=threshold)dp[i][j]=min(dp[i][j], dp[i][j-1]+1);
             if(A.ptr[i-1]==B.ptr[j-1])dp[i][j]=min(dp[i][j], dp[i-1][j-1]);
-            // flag |= dp[i][j]<=threshold;
         }
-        // if (!flag) return -1;
     }
 
     return dp[n][m] <= threshold ? dp[n][m] : -1;

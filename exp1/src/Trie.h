@@ -8,7 +8,7 @@
 #include <set>
 #include <algorithm>
 
-#define EACH_ALLOC 1024
+#define EACH_ALLOC 10240
 
 template<typename Td>
 struct Node
