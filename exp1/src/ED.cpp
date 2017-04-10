@@ -14,6 +14,7 @@ ED::ED()
     dp = new int*[BUFFER_SIZE];
     for(int i = 0; i < BUFFER_SIZE; i ++)
         dp[i] = new int[BUFFER_SIZE];
+    times = last_modified = NULL;
 }
 
 ED::~ED()
@@ -29,6 +30,9 @@ ED::~ED()
     for(int i = 0; i < (int)tries.size(); i ++)
         delete tries[i];
     tries.clear();
+
+    if (times) delete[] times;
+    if (last_modified) delete[] last_modified;
 }
 
 void ED::readEntries(const char* filename)
@@ -81,6 +85,10 @@ int ED::init(const char* filename)
         tries.push_back(trie);
     }
 
+    times = new int[entries.size()];
+    last_modified = new int[entries.size()];
+    last_cnt = 0;
+
     return SUCCESS;
 }
 
@@ -129,43 +137,27 @@ int ED::trieSearch(const STR& S, int threshold, std::vector<std::pair<unsigned, 
 {
     const int T = S.length - threshold*Q - Q + 1;
     if (T <= 0) return FAILURE;
+    last_cnt ++;
 
-    typedef CON3<int, int*, int*> QNode;
-    priority_queue<QNode> que;
     for(int i = 0; i + Q <= S.length; i ++)
     {
         auto x = trie->search(S.ptr+i, Q);
-        if (x.first && x.second) que.push(QNode(*x.first, x.first, x.second));
-    }
+        if (!x.first || !x.second) continue;
+        auto s = x.first, t = x.second;
 
-    int count = 0, value = -1;
-    while(!que.empty())
-    {
-        auto p = que.top(); que.pop();
-        int v = p.data1;
-        auto it = p.data2;
-        auto end = p.data3;
-        // cerr << "debug : " << v << endl;
+        for(auto p = s; p != t; p ++)
+        {
+            times[*p] = times[*p]*int(last_modified[*p] == last_cnt) + 1;
+            last_modified[*p] = last_cnt;
 
-        if (v == value) count ++;
-        else {
-            if (value >= v) exit(1);
-            count = 1; value = v;
-        }
-        // cout << "debug : " << value << " " << count << " " << T << endl;
-        if (count == T)
-        {
-            int temp = inDistance(S, entries[value], threshold);
-            if (temp >= 0) result.push_back(make_pair(value, temp));
-        }
-        
-        it ++;
-        if (it != end)
-        {
-            // cerr << "push : " << *it << endl;
-            que.push(QNode(*it, it, end));
+            if (times[*p] == T)
+            {
+                int temp = inDistance(S, entries[*p], threshold);
+                if (temp >= 0) result.push_back(make_pair(*p, temp));
+            }
         }
     }
+    sort(result.begin(), result.end());
 
     return SUCCESS;   
 }

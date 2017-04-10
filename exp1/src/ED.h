@@ -38,6 +38,8 @@ private:
     std::vector<Trie<int>*> tries;
 
     int **dp; // 用于计算两个字符串的ED
+    int *times; // 计算出现的次数
+    int *last_modified, last_cnt;
 };
 
 #endif // SEARCH_ED_H
