@@ -8,7 +8,7 @@
 #include <set>
 #include <algorithm>
 
-#define EACH_ALLOC 10240
+#define EACH_ALLOC 1024
 
 template<typename Td>
 struct Node
@@ -29,13 +29,21 @@ public:
     Trie();
 
     void adjust();
-    void insert(const Td& d, const char* ptr, int length = -1);
-    std::pair<Td*, Td*> search(const char* ptr, int length = -1);
+    void insert(const Td& d, const char* ptr, int length);
+    std::pair<Td*, Td*> search(const char* ptr, int length);
+
+    // return 1 if not exist
+    int insert(const char* ptr, int length);
+    // return 1 if exist
+    int exist(const char* ptr, int length) const;
+    // only clear the each_pool
+    void clear();
 
 private:
     Node<Td>* root;
     Node<Td>* each_pool;
     int each_tail;
+    int node_size;
     std::vector<Node<Td>*> pools;
 
     Node<Td>* newNode();
@@ -46,6 +54,7 @@ Trie<Td>::Trie()
 {
     each_pool = NULL;
     each_tail = 0;
+    node_size = 0;
     root = newNode();
 }
 
@@ -73,7 +82,6 @@ void Trie<Td>::adjust()
 template<typename Td>
 void Trie<Td>::insert(const Td& d, const char* ptr, int length)
 {
-    if (length == -1) length = std::strlen(ptr);
     Node<Td>* pos = root;
     while(length --)
     {
@@ -92,7 +100,6 @@ void Trie<Td>::insert(const Td& d, const char* ptr, int length)
 template<typename Td>
 std::pair<Td*, Td*> Trie<Td>::search(const char* ptr, int length)
 {
-    if (length == -1) length = std::strlen(ptr);
     Node<Td>* pos = root;
     while(length -- && pos)
     {
@@ -103,6 +110,48 @@ std::pair<Td*, Td*> Trie<Td>::search(const char* ptr, int length)
 }
 
 template<typename Td>
+int Trie<Td>::insert(const char* ptr, int length)
+{
+    Node<Td>* pos = root;
+    while(length --)
+    {
+        if (pos->son[(int)*ptr] == NULL) {
+            pos->son[(int)*ptr] = newNode();
+        }
+        pos = pos->son[(int)*ptr];
+        ptr ++;
+    }
+    int ret = (pos->ds == NULL);
+    pos->ds = (int*)0x1;
+    return ret;
+}
+
+template<typename Td>
+int Trie<Td>::exist(const char* ptr, int length) const
+{
+    Node<Td>* pos = root;
+    while(length -- && pos)
+    {
+        pos = pos->son[(int)*ptr];
+        ptr ++;
+    }
+    return pos && pos->ds != NULL;
+}
+
+template<typename Td>
+void Trie<Td>::clear()
+{
+    for(int i = 0; i < node_size; i ++)
+    {
+        each_pool[i].ds = each_pool[i].de = NULL;
+        memset(each_pool[i].son, 0, sizeof(each_pool[i].son));
+    }
+    node_size = 0;
+    each_tail = 0;
+    root = newNode();
+}
+
+template<typename Td>
 Node<Td>* Trie<Td>::newNode()
 {
     if (each_pool == NULL || each_tail == EACH_ALLOC) {
@@ -110,6 +159,7 @@ Node<Td>* Trie<Td>::newNode()
         each_tail = 0;
         pools.push_back(each_pool);
     }
+    node_size ++;
     return &each_pool[each_tail++];
 }
 

@@ -46,7 +46,7 @@ void ED::readEntries(const char* filename)
         line[len]='\0';
         assert(len != 0);
 
-        STR str;
+        Str str;
         str.ptr = new char[BUFFER_SIZE];
         str.length = len;
         memcpy(str.ptr, line, sizeof(char)*BUFFER_SIZE);
@@ -90,7 +90,7 @@ int ED::init(const char* filename)
     return SUCCESS;
 }
 
-int ED::search(const STR& S, int threshold, vector<pair<unsigned, unsigned> > &result)
+int ED::search(const Str& S, int threshold, vector<pair<unsigned, unsigned> > &result)
 {
     result.clear();
     result.reserve(BUFFER_SIZE*10);
@@ -132,7 +132,7 @@ int ED::search(const STR& S, int threshold, vector<pair<unsigned, unsigned> > &r
     return SUCCESS;
 }
 
-int ED::trieSearch(const STR& S, int threshold, std::vector<std::pair<unsigned, unsigned> > &result, const int Q, Trie<int>* trie)
+int ED::trieSearch(const Str& S, int threshold, std::vector<std::pair<unsigned, unsigned> > &result, const int Q, Trie<int>* trie)
 {
     const int T = S.length - threshold*Q - Q + 1;
     if (T <= 0) return FAILURE;
@@ -182,7 +182,7 @@ int ED::trieSearch(const STR& S, int threshold, std::vector<std::pair<unsigned, 
     return SUCCESS;
 }
 
-int ED::inDistance(const STR& A, const STR& B, int threshold)
+int ED::inDistance(const Str& A, const Str& B, int threshold)
 {
     int n = A.length;
     int m = B.length;
@@ -202,17 +202,4 @@ int ED::inDistance(const STR& A, const STR& B, int threshold)
     }
 
     return dp[n][m] <= threshold ? dp[n][m] : -1;
-}
-
-int ED::exist(int* s, int* t, int value)
-{
-    int* mid;
-    while(s + 1 < t)
-    {
-        mid = s+(t-s)/2;
-        if (*mid > value)
-            t = mid;
-        else s = mid;
-    }
-    return *s == value;
 }

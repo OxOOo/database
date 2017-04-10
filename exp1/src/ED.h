@@ -24,18 +24,16 @@ public:
     const std::vector<int> Qs = {8, 7, 6, 5, 4, 3};
 
     int init(const char* filename);
-	int search(const STR& S, int threshold, std::vector<std::pair<unsigned, unsigned> > &result);
+	int search(const Str& S, int threshold, std::vector<std::pair<unsigned, unsigned> > &result);
 private:
     ///
-    int trieSearch(const STR& S, int threshold, std::vector<std::pair<unsigned, unsigned> > &result, const int Q, Trie<int>* trie);
+    int trieSearch(const Str& S, int threshold, std::vector<std::pair<unsigned, unsigned> > &result, const int Q, Trie<int>* trie);
     /// 字符串A和B之间的编辑距离是否在threshold之间,否则返回-1
-    int inDistance(const STR& A, const STR& B, int threshold);
+    int inDistance(const Str& A, const Str& B, int threshold);
     /// 读取字符串
     void readEntries(const char* filename);
 
-    int exist(int* s, int* t, int value);
-
-    std::vector<STR> entries; // 所有单词
+    std::vector<Str> entries; // 所有单词
     std::vector<int> entries_ids; // 按照单词的长度排序
     Trie<int> trie;
 

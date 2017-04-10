@@ -7,12 +7,18 @@
 #define FAILURE 1
 #define BUFFER_SIZE 512
 
-struct STR
+struct Str
 {
     char* ptr;
     int length;
 
-    STR(char* ptr = NULL, int length = 0): ptr(ptr), length(length) {}
+    Str(char* ptr = NULL, int length = 0): ptr(ptr), length(length) {}
+};
+
+struct StrList
+{
+    Str* strs;
+    int size;
 };
 
 template<typename T1, typename T2, typename T3>
@@ -28,5 +34,8 @@ struct CON3
         return data1 > B.data1;
     }
 };
+
+// return true if exist
+int exist(int* s, int* t, int value);
 
 #endif // COMMON_H
