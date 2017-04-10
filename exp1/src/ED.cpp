@@ -15,6 +15,8 @@ ED::ED()
     for(int i = 0; i < BUFFER_SIZE; i ++)
         dp[i] = new int[BUFFER_SIZE];
     times = last_modified = NULL;
+
+    lists = new CON3<int,int*,int*>[BUFFER_SIZE];
 }
 
 ED::~ED()
@@ -33,6 +35,7 @@ ED::~ED()
 
     if (times) delete[] times;
     if (last_modified) delete[] last_modified;
+    delete[] lists;
 }
 
 void ED::readEntries(const char* filename)
@@ -88,6 +91,8 @@ int ED::init(const char* filename)
     times = new int[entries.size()];
     last_modified = new int[entries.size()];
     last_cnt = 0;
+    memset(times, 0, sizeof(int)*entries.size());
+    memset(last_modified, 0, sizeof(int)*entries.size());
 
     return SUCCESS;
 }
@@ -95,6 +100,7 @@ int ED::init(const char* filename)
 int ED::search(const STR& S, int threshold, vector<pair<unsigned, unsigned> > &result)
 {
     result.clear();
+    result.reserve(BUFFER_SIZE);
 
     for(int i = 0; i < (int)Qs.size(); i ++)
     {
@@ -139,27 +145,48 @@ int ED::trieSearch(const STR& S, int threshold, std::vector<std::pair<unsigned, 
     if (T <= 0) return FAILURE;
     last_cnt ++;
 
+    int lists_cnt = 0;
     for(int i = 0; i + Q <= S.length; i ++)
     {
         auto x = trie->search(S.ptr+i, Q);
         if (!x.first || !x.second) continue;
-        auto s = x.first, t = x.second;
+        lists[lists_cnt++] = CON3<int,int*,int*>(x.second-x.first, x.first, x.second);
+    }
+    sort(lists, lists+lists_cnt);
+
+    for(int k = T-1; k < lists_cnt; k ++)
+    {
+        auto s = lists[k].data2, t = lists[k].data3;
 
         for(auto p = s; p != t; p ++)
         {
             times[*p] = times[*p]*int(last_modified[*p] == last_cnt) + 1;
             last_modified[*p] = last_cnt;
+        }
+    }
 
-            if (times[*p] == T)
+    for(int k = T-1; k < lists_cnt; k ++)
+    {
+        auto s = lists[k].data2, t = lists[k].data3;
+
+        for(auto p = s; p != t; p ++)
+        {
+            if (last_modified[*p] != last_cnt) continue;
+            last_modified[*p] = last_cnt - 1;
+            for(int i = 0; i < T-1 && times[*p] < T && times[*p]+(T-1-i)>=T; i ++)
+                times[*p] += exist(lists[i].data2, lists[i].data3, *p);
+
+            if (times[*p] >= T)
             {
                 int temp = inDistance(S, entries[*p], threshold);
                 if (temp >= 0) result.push_back(make_pair(*p, temp));
             }
         }
     }
+
     sort(result.begin(), result.end());
 
-    return SUCCESS;   
+    return SUCCESS;
 }
 
 int ED::inDistance(const STR& A, const STR& B, int threshold)
@@ -185,4 +212,17 @@ int ED::inDistance(const STR& A, const STR& B, int threshold)
     }
 
     return dp[n][m] <= threshold ? dp[n][m] : -1;
+}
+
+int ED::exist(int* s, int* t, int value)
+{
+    int* mid;
+    while(s + 1 < t)
+    {
+        mid = s+(t-s)/2;
+        if (*mid > value)
+            t = mid;
+        else s = mid;
+    }
+    return *s == value;
 }

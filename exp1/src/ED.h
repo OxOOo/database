@@ -21,7 +21,7 @@ class ED
 public:
     ED();
     ~ED();
-    const std::vector<int> Qs = {8, 6, 4};
+    const std::vector<int> Qs = {8, 6, 4, 3};
 
     int init(const char* filename);
 	int search(const STR& S, int threshold, std::vector<std::pair<unsigned, unsigned> > &result);
@@ -33,6 +33,8 @@ private:
     /// 读取字符串
     void readEntries(const char* filename);
 
+    int exist(int* s, int* t, int value);
+
     std::vector<STR> entries; // 所有单词
     std::vector<int> entries_ids; // 按照单词的长度排序
     std::vector<Trie<int>*> tries;
@@ -40,6 +42,7 @@ private:
     int **dp; // 用于计算两个字符串的ED
     int *times; // 计算出现的次数
     int *last_modified, last_cnt;
+    CON3<int,int*,int*> *lists;
 };
 
 #endif // SEARCH_ED_H
