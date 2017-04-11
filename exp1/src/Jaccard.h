@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "Trie.h"
+#include "TrieS.h"
 
 #include <vector>
 #include <cstdlib>
@@ -22,14 +23,14 @@ private:
     /// 读取字符串
     void readEntries(const char* filename);
     /// Jaccard 距离
-    double inJaccard(const Trie<int>& query_trie, const int query_size, const StrList& S, double threshold);
+    double inJaccard(const TrieS& query_trie, const int query_size, const StrList& S, double threshold);
 
     StrList parseStr(const Str& str);
 
     std::vector<StrList> lines; // 所有语句
 
     Trie<int> trie;
-    Trie<int> str_trie;
+    TrieS str_trie;
 
     int *times; // 计算出现的次数
     int *last_modified, last_cnt;

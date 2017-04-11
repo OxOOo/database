@@ -135,7 +135,6 @@ int ED::search(const Str& S, int threshold, vector<pair<unsigned, unsigned> > &r
 int ED::trieSearch(const Str& S, int threshold, std::vector<std::pair<unsigned, unsigned> > &result, const int Q, Trie<int>* trie)
 {
     const int T = S.length - threshold*Q - Q + 1;
-    if (T <= 0) return FAILURE;
     last_cnt ++;
 
     int lists_cnt = 0;

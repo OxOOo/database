@@ -18,6 +18,7 @@ struct Str
 struct StrList
 {
     Str* strs;
+    char* mem; // point to the all Str memory
     int size;
 };
 
@@ -35,7 +36,7 @@ struct CON3
     }
 };
 
-// return true if exist
+// return 1 if exist
 int exist(int* s, int* t, int value);
 
 #endif // COMMON_H

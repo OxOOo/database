@@ -16,6 +16,10 @@ Jaccard::~Jaccard()
     if (times) delete[] times;
     if (last_modified) delete[] last_modified;
     delete[] lists;
+
+    for(int i = 0; i < (int)lines.size(); i ++)
+        delete[] lines[i].mem;
+    lines.clear();
 }
 
 int Jaccard::init(const char* filename)
@@ -58,7 +62,7 @@ int Jaccard::search(const Str& S, double threshold, vector<pair<unsigned, double
     result.reserve(BUFFER_SIZE*10);
 
     StrList str_list = parseStr(S);
-    str_trie.clear();
+    str_trie.init();
     int str_size = 0;
     for(int i = 0; i < str_list.size; i ++)
     {
@@ -153,6 +157,7 @@ StrList Jaccard::parseStr(const Str& str)
 
     StrList list;
     list.strs = new Str[grams.size()];
+    list.mem = str.ptr;
     list.size = grams.size();
     for(int i = 0; i < (int)grams.size(); i ++)
     {
@@ -165,7 +170,7 @@ StrList Jaccard::parseStr(const Str& str)
     return list;
 }
 
-double Jaccard::inJaccard(const Trie<int>& query_trie, const int query_size, const StrList& S, double threshold)
+double Jaccard::inJaccard(const TrieS& query_trie, const int query_size, const StrList& S, double threshold)
 {
     int A = 0, B = query_size;
     for(int i = 0; i < S.size; i ++)
