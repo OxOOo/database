@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小实验一  <近似查询> 实验报告</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body><div class="container"><h1 id="小实验一-近似查询-实验报告">小实验一  &lt;近似查询&gt; 实验报告</h1>
+
+<ol>
+<li><p><a href="#part1">最终效果</a></p></li>
+<li><p><a href="#part2">编辑距离&lt;近似查询&gt;</a></p>
+
+<ul><li><a href="#algorithm">算法</a></li>
+<li><a href="#better">优化</a></li></ul></li>
+<li><p><a href="#part3">Jaccard&lt;近似查询&gt;</a></p></li>
+</ol>
+
+<h2 id="最终效果">最终效果<div id="part1"></div></h2>
+
+<p><img src="1.png" alt="" title=""></p>
+
+
+
+<h2 id="编辑距离近似查询">编辑距离&lt;近似查询&gt;<div id="part2"></div></h2>
+
+
+
+<h3 id="算法">算法<div id="algorithm"></div></h3>
+
+<p>采用Q-gram算法，在创建索引的时候，预先设置一个 <script type="math/tex" id="MathJax-Element-10">Q</script> ，对于每次查询字符串 <script type="math/tex" id="MathJax-Element-11">S</script> 和编辑距离上限 <script type="math/tex" id="MathJax-Element-12">\tau</script>，可以计算出它和满足条件的字符串之间至少有 <script type="math/tex" id="MathJax-Element-13">T</script> 个完全相同的Q-gram，其中：</p>
+
+
+
+<p><script type="math/tex; mode=display" id="MathJax-Element-14">T = |S| - Q + 1 - Q \times \tau</script></p>
+
+<p>根据这种思想，在创建索引的时候，对于数据集中的每一个字符串，取出其每一个Q-gram插入到一颗<code>Trie</code>树中，建立反向列表，即实现 <script type="math/tex" id="MathJax-Element-15">gram \rightarrow IDlist</script> 的查询;需要注意的是，同一个字符串可能具有相同的Q-gram，对此只需要对相同的Q-gram建一个索引即可。</p>
+
+<p>在查询时，对于查询的字符串 <script type="math/tex" id="MathJax-Element-16">S</script> ，可以根据上面的公式计算出 <script type="math/tex" id="MathJax-Element-17">T</script> ，再从<code>Trie</code>树中取出 <script type="math/tex" id="MathJax-Element-18">S</script> 的每个Q-gram（此处相同的Q-gram要取出多次）对应的 <script type="math/tex" id="MathJax-Element-19">IDlist</script> ，而 <script type="math/tex" id="MathJax-Element-20">T</script> 即表明，所有满足编辑距离限制的字符串在 <script type="math/tex" id="MathJax-Element-21">IDlist</script> 中至少出现了 <script type="math/tex" id="MathJax-Element-22">T</script> 次，所以我们只需要将在对应的 <script type="math/tex" id="MathJax-Element-23">IDlist</script> 中出现次数不小于 <script type="math/tex" id="MathJax-Element-24">T</script> 的字符串取出来，再计算其和查询字符串 <script type="math/tex" id="MathJax-Element-25">S</script> 之间的编辑距离即可。</p>
+
+<p>对于找出在若干个 <script type="math/tex" id="MathJax-Element-26">IDlist</script> 中出现次数不小于 <script type="math/tex" id="MathJax-Element-27">T</script> 的 <script type="math/tex" id="MathJax-Element-28">ID</script> ，我们可以在创建索引的时候对每个 <script type="math/tex" id="MathJax-Element-29">IDlist</script> 内部的元素排序，然后将这些 <script type="math/tex" id="MathJax-Element-30">IDlist</script> 中较长的 <script type="math/tex" id="MathJax-Element-31">T-1</script> 放到一边，对于剩下的 <script type="math/tex" id="MathJax-Element-32">IDlist</script> ，使用类似<strong>计数排序</strong>的方式统计每个 <script type="math/tex" id="MathJax-Element-33">ID</script> 出现的次数，然后再将这些 <script type="math/tex" id="MathJax-Element-34">ID</script> 在较长的 <script type="math/tex" id="MathJax-Element-35">T-1</script> 个 <script type="math/tex" id="MathJax-Element-36">IDlist</script> 通过二分查找的方式统计出现的次数，由此可以统计出出现次数不少于 <script type="math/tex" id="MathJax-Element-37">T</script> 的 <script type="math/tex" id="MathJax-Element-38">ID</script> ，然后再进行进一步的判断即可。</p>
+
+<p>对于计算出的 <script type="math/tex" id="MathJax-Element-39">T<0</script> 的情况，则无法使用上面的方法，但是导致 <script type="math/tex" id="MathJax-Element-40">T<0</script> 情况出现唯有 <script type="math/tex" id="MathJax-Element-41">|S|</script> 较小，所以这部分直接判断即可。</p>
+
+
+
+<h3 id="优化">优化<div id="better"></div></h3>
+
+<p>在实践中，发现 <script type="math/tex" id="MathJax-Element-42">Q=8</script> 速度最快，且满足内存限制;</p>
+
+<p>回顾 <script type="math/tex" id="MathJax-Element-43">T</script> 的计算公式：</p>
+
+
+
+<p><script type="math/tex; mode=display" id="MathJax-Element-44">T = |S| - Q + 1 - Q \times \tau</script></p>
+
+<p>可以发现 <script type="math/tex" id="MathJax-Element-45">Q</script> 越大，则越可能导致 <script type="math/tex" id="MathJax-Element-46">T<0</script> ，但是 <script type="math/tex" id="MathJax-Element-47">Q</script> 越小，则取出的 <script type="math/tex" id="MathJax-Element-48">IDlist</script> 越大;故对于每个查询，应该选取最大的使得 <script type="math/tex" id="MathJax-Element-49">T\ge0</script> 的可能的 <script type="math/tex" id="MathJax-Element-50">Q</script> ，所以在可能的情况下，我们应该对更多的 <script type="math/tex" id="MathJax-Element-51">Q</script> 建立反向列表;</p>
+
+<p>注意到我们是使用<code>Trie</code>树来储存索引，所以我们可以直接在同一个<code>Trie</code>树中建立不同 <script type="math/tex" id="MathJax-Element-52">Q</script> 的索引，而不会增加太多的空间;此方法即使我在程序中使用的方法。</p>
+
+
+
+<h2 id="jaccard近似查询">Jaccard&lt;近似查询&gt;<div id="part3"></div></h2>
+
+<p>Jaccard近似查询和编辑距离的近似查询非常类似，Jaccard的定义如下：</p>
+
+
+
+<p><script type="math/tex; mode=display" id="MathJax-Element-53">\frac{|Q \bigcap S|}{|Q \bigcup S|} \ge \tau</script></p>
+
+<p>其中 <script type="math/tex" id="MathJax-Element-54">Q</script> 是查询的单词集合, <script type="math/tex" id="MathJax-Element-55">S</script> 是数据库中的某个记录的单词集合;将公式进行推到，即可得到：</p>
+
+
+
+<p><script type="math/tex; mode=display" id="MathJax-Element-56">T = |Q \bigcap S| \ge |Q \bigcup S| \times \tau \ge |Q| \times \tau</script></p>
+
+<p>即：</p>
+
+
+
+<p><script type="math/tex; mode=display" id="MathJax-Element-57">T \ge \lceil |Q| \times \tau \rceil</script></p>
+
+<p>其中 <script type="math/tex" id="MathJax-Element-58">T</script> 表示查询字符串和数据库中某记录完全相同的单词个数。</p>
+
+<p>所以，对于数据库中的每个记录，将其单词插入到<code>Trie</code>树中，建立 <script type="math/tex" id="MathJax-Element-59">单词 \rightarrow IDlist</script> 的反向列表;</p>
+
+<p>对于每个查询，从<code>Trie</code>树中取出对应若干个的 <script type="math/tex" id="MathJax-Element-60">IDlist</script> ，然后用和编辑距离相同的方法统计出出现次数不小于 <script type="math/tex" id="MathJax-Element-61">T</script> 的 <script type="math/tex" id="MathJax-Element-62">ID</script> （由于方法完全相同，故在此不再赘述），在使用<code>Trie</code>树（此处的<code>Trie</code>树和建立索引的<code>Trie</code>树不是同一个）判断一下每个取出的 <script type="math/tex" id="MathJax-Element-63">ID</script> 和查询是否满足集合即可。</p></div></body>
+</html>
