@@ -29,7 +29,7 @@ public:
 
     void adjust();
     Node* insert(const int& d, const char* ptr, int length);
-    std::pair<int*, int*> search(const char* ptr, int length);
+    std::pair<int*, int*> search(const char* ptr, int length) const;
 
 private:
     Node* root;

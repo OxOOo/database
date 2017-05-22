@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
     const char* filenameA = "../A.txt";
     const char* filenameB = "../B.txt";
 
-    joiner.joinJaccard(filenameA, filenameB, jaccardThreshold, resultJaccard);
+    // joiner.joinJaccard(filenameA, filenameB, jaccardThreshold, resultJaccard);
     joiner.joinED(filenameA, filenameB, edThreshold, resultED);
 
     for(int i = 0; i < (int)resultED.size(); i ++)

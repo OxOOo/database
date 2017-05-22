@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cctype>
 #include <iostream>
+#include <assert.h>
 
 using namespace std;
 
@@ -22,18 +23,15 @@ SimJoiner::~SimJoiner() {
 
 int SimJoiner::joinJaccard(const char *filename1, const char *filename2, double threshold, vector<JaccardJoinResult> &result) {
     result.clear();
+    assert(false);
     return SUCCESS;
 }
 
 int SimJoiner::joinED(const char *filename1, const char *filename2, unsigned threshold, vector<EDJoinResult> &result) {
     STR_FILE fileA = loadFile(filename1);
     STR_FILE fileB = loadFile(filename2);
-    // cout << fileA.line_size << endl;
-    // for(int i = 0; i < fileA.line_size; i ++)
-    // {
-    //     cout << ":" << fileA.lines[i].ptr << " " << fileA.lines[i].length << endl;
-    // }
-    ed.join(fileA, fileB, threshold, result);
+
+    ed.join(fileA, fileB, (int)threshold, result);
 
     return SUCCESS;
 }
@@ -62,13 +60,11 @@ STR_FILE SimJoiner::loadFile(const char *filename)
     {
         int offset = pos;
         while(offset < end && file.content[offset] != '\n') offset ++;
-        while(pos < offset && (file.content[offset] == '\0' || isspace(file.content[offset]))) offset --;
 
         file.lines[file.line_size].ptr = file.content + pos;
-        file.lines[file.line_size].length = offset - pos + 1;
+        file.lines[file.line_size].length = offset - pos;
 
-        do offset ++; while(offset < end && isspace(file.content[offset]));
-        pos = offset;
+        pos = offset+1;
 
         file.lines[file.line_size].ptr[file.lines[file.line_size].length] = '\0';
         file.line_size ++;

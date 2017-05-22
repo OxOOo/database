@@ -17,5 +17,6 @@ const int FAILURE = 1;
 const int FILE_LINE_SIZE = 200000 + 10;
 const int FILE_EACH_LINE = 256 + 10;
 const int BUFFER_SIZE = 512;
+const int MAX_TAU = 3;
 
 #endif // COMMON_H

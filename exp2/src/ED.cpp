@@ -1,12 +1,14 @@
 #include "ED.h"
 
 #include <cstdlib>
+#include <cmath>
+#include <assert.h>
 
 using namespace std;
 
 bool cmp(const EDJoinResult&A, const EDJoinResult&B)
 {
-    return A.id1 < B.id1 || (A.id1 == B.id1 && A.id2 < B.id2);
+    return A.id2 < B.id2;
 }
 
 ED::ED()
@@ -14,7 +16,6 @@ ED::ED()
     dp = new int*[BUFFER_SIZE];
     for(int i = 0; i < BUFFER_SIZE; i ++)
         dp[i] = new int[BUFFER_SIZE];
-    grams = new GRAM[FILE_LINE_SIZE*FILE_EACH_LINE*2];
     checked = new int[FILE_LINE_SIZE];
     checked_flag = 0;
 }
@@ -24,89 +25,91 @@ ED::~ED()
     for(int i = 0; i < BUFFER_SIZE; i ++)
         delete[] dp[i];
     delete[] dp;
-    for(int i = 0; i < (int)tries.size(); i ++)
-        delete tries[i];
-    delete[] grams;
     delete[] checked;
 }
 
-int ED::join(const STR_FILE&A, const STR_FILE&B, unsigned threshold, std::vector<EDJoinResult> &result)
+int ED::join(const STR_FILE&A, const STR_FILE&B, int threshold, std::vector<EDJoinResult> &result)
 {
     result.clear();
-    df_trie = new Trie();
-    tries.push_back(df_trie);
-    index_trie = new Trie();
-    tries.push_back(index_trie);
-
-    int gram_offset;
-
-    // calc df
-    gram_offset = 0;
+    
+    for(int i = 0; i < FILE_EACH_LINE; i ++)
+        for(int j = 0; j < threshold+1; j ++)
+        {
+            partitions[i][j] = new Hash();
+        }
+    for(int i = 0; i < FILE_EACH_LINE; i ++)
+    {
+        pos[i][0] = 0;
+        len[i][0] = i/(threshold+1);
+        for(int j = 1; j < threshold+1; j ++)
+        {
+            pos[i][j] = pos[i][j-1] + len[i][j-1];
+            len[i][j] = i/(threshold+1) + int(j<i%int(threshold+1));
+        }
+    }
+    
+    // build B partitions
     for(int i = 0; i < B.line_size; i ++)
     {
-        for(int j = 0; j + Q <= B.lines[i].length; j ++)
+        for(int j = 0; j < threshold+1; j ++)
         {
-            grams[gram_offset].ptr = B.lines[i].ptr + j;
-            grams[gram_offset].node = df_trie->insert(i, B.lines[i].ptr + j, Q);
-            gram_offset ++;
+            partitions[B.lines[i].length][j]->insert(i, B.lines[i].ptr + pos[B.lines[i].length][j], len[B.lines[i].length][j]);
         }
     }
-    for(int i = 0; i < A.line_size; i ++)
-    {
-        for(int j = 0; j + Q <= A.lines[i].length; j ++)
+    for(int i = 0; i < FILE_EACH_LINE; i ++)
+        for(int j = 0; j < threshold+1; j ++)
         {
-            grams[gram_offset].ptr = A.lines[i].ptr + j;
-            grams[gram_offset].node = df_trie->insert(-i, A.lines[i].ptr + j, Q);
-            gram_offset ++;
+            partitions[i][j]->adjust();
         }
-    }
-    df_trie->adjust();
-    for(int i = 0; i < gram_offset; i ++)
-    {
-        grams[i].df = grams[i].node->de - grams[i].node->ds;
-    }
-
-    // build index
-    gram_offset = 0;
-    for(int i = 0; i < B.line_size; i ++)
-    {
-        int size = B.lines[i].length - Q + 1;
-
-        sort(grams+gram_offset, grams+gram_offset+size, gram_cmp);
-
-        for(int j = 0; j < size && j <= Q*threshold+1; j ++)
-        {
-            index_trie->insert(i, grams[gram_offset+j].ptr, Q);
-        }
-        gram_offset += size;
-    }
-    index_trie->adjust();
 
     // search
     for(int i = 0; i < A.line_size; i ++)
     {
-        int size = A.lines[i].length - Q + 1;
+        const STR s = A.lines[i];
+        const int L = s.length;
+        const int now_rst_size = result.size();
         checked_flag ++;
-        sort(grams+gram_offset, grams+gram_offset+size, gram_cmp);
 
-        for(int j = 0; j < size && j <= Q*threshold+1; j ++)
+        for(int l = max(0, L-threshold), le = L+threshold; l <= le; l ++)
         {
-            auto info = index_trie->search(grams[gram_offset+j].ptr, Q);
-            for(int *x = info.first; x != info.second; x ++)
-                if (checked[*x] != checked_flag)
+            const int delta = abs(L-l);
+            for(int j = 0; j < threshold+1; j ++)
+            {
+                int ps = 0, pe = L-1;
+                ps = max(ps, pos[l][j]-threshold);
+                pe = min(pe, pos[l][j]+threshold);
+                if (L >= l) {
+                    ps = max(ps, pos[l][j]-(threshold-delta)/2);
+                } else {
+                    pe = min(pe, pos[l][j]+(threshold+delta)/2);
+                }
+                for(int p = ps; p <= pe; p ++)
                 {
-                    checked[*x] = checked_flag;
-                    int dis = inDistance(A.lines[i], B.lines[*x], threshold);
-                    if (dis != -1)
+                    auto rst = partitions[l][j]->search(s.ptr+p, len[l][j]);
+                    for(int *x = rst.first; x != rst.second; x ++)
                     {
-                        result.push_back((EDJoinResult){(unsigned)i, (unsigned)*x, (unsigned)dis});
+                        if (checked[*x] != checked_flag)
+                        {
+                            int tmp = inDistance(s, B.lines[*x], threshold);
+                            if (tmp >= 0)
+                            {
+                                result.push_back((EDJoinResult){i, *x, tmp});
+                            }
+                        }
+                        checked[*x] = checked_flag;
                     }
                 }
+            }
         }
 
-        gram_offset += size;
+        sort(result.begin()+now_rst_size, result.end(), cmp);
     }
-    sort(result.begin(), result.end(), cmp);
+
+    for(int i = 0; i < FILE_EACH_LINE; i ++)
+        for(int j = 0; j < threshold+1; j ++)
+        {
+            delete partitions[i][j];
+        }
 
     return SUCCESS;
 }

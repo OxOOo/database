@@ -53,7 +53,7 @@ Trie::Node* Trie::insert(const int& d, const char* ptr, int length)
     return pos;
 }
 
-std::pair<int*, int*> Trie::search(const char* ptr, int length)
+std::pair<int*, int*> Trie::search(const char* ptr, int length) const
 {
     Node* pos = root;
     while(length -- && pos)
