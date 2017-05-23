@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小实验二  <近似链接> 实验报告</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body><div class="container"><h1 id="小实验二-近似链接-实验报告">小实验二  &lt;近似链接&gt; 实验报告</h1>
+
+<ol>
+<li><p><a href="#part1">最终效果</a></p></li>
+<li><p><a href="#part2">编辑距离&lt;近似链接&gt;</a></p>
+
+<ul><li><a href="#algorithm">算法思想</a></li>
+<li><a href="#detail">实现细节</a></li></ul></li>
+<li><p><a href="#part3">Jaccard&lt;近似链接&gt;</a></p></li>
+</ol>
+
+<h2 id="最终效果"><div id="part1">最终效果</div></h2>
+
+<p><img src="rst.png" alt="" title=""></p>
+
+<h2 id="编辑距离近似链接"><div id="part2">编辑距离&lt;近似链接&gt;</div></h2>
+
+
+
+<h3 id="算法思想"><div id="algorithm">算法思想</div></h3>
+
+<p>考虑对 <script type="math/tex" id="MathJax-Element-1">R</script> 和 <script type="math/tex" id="MathJax-Element-2">S</script> 两个集合中，对编辑距离小于等于 <script type="math/tex" id="MathJax-Element-3">\tau</script> 的字符串进行链接。</p>
+
+<p>使用<code>Partition-based</code>算法，将 <script type="math/tex" id="MathJax-Element-4">S</script> 中的每个字符串按照张度平均拆分成 <script type="math/tex" id="MathJax-Element-5">\tau+1</script> 份，对于某 <script type="math/tex" id="MathJax-Element-6">R</script> 中的字符串 <script type="math/tex" id="MathJax-Element-7">r \in R</script> 和 <script type="math/tex" id="MathJax-Element-8">S</script> 中的字符串 <script type="math/tex" id="MathJax-Element-9">s \in S</script> ，如果两者的编辑距离不超过 <script type="math/tex" id="MathJax-Element-10">\tau</script> ，则 <script type="math/tex" id="MathJax-Element-11">s</script> 的 <script type="math/tex" id="MathJax-Element-12">\tau+1</script> 份字符串必定至少存在一份是 <script type="math/tex" id="MathJax-Element-13">r</script> 的字串。</p>
+
+<p>为此，我们可以将 <script type="math/tex" id="MathJax-Element-14">S</script> 中的每个字符串按照分成的 <script type="math/tex" id="MathJax-Element-15">\tau+1</script> 个子串建立反向列表，然后对于 <script type="math/tex" id="MathJax-Element-16">R</script> 中的每个字符串，在反向列表中查询 <script type="math/tex" id="MathJax-Element-17">S</script> 中有哪些字符串的 <script type="math/tex" id="MathJax-Element-18">\tau+1</script> 子串出现在了待查询的字符串中，然后再对这些字符串进行过滤即可。</p>
+
+<p>为了减小待过滤的字符串集合，可以增加一些限制：</p>
+
+<ol>
+<li><code>Length-based</code>，由于只有长度差不超过 <script type="math/tex" id="MathJax-Element-19">\tau</script> 的字符串才可能满足要求，所以可以只用检查 <script type="math/tex" id="MathJax-Element-20">S</script> 中与 <script type="math/tex" id="MathJax-Element-21">r</script> 长度差不超过 <script type="math/tex" id="MathJax-Element-22">\tau</script> 的字符串即可</li>
+<li><code>Shift-based</code>，若 <script type="math/tex" id="MathJax-Element-23">r</script> 和 <script type="math/tex" id="MathJax-Element-24">s</script> 中的某段匹配了，则要求匹配位置之前和之后的字符串最小可能的编辑距离之和不超过 <script type="math/tex" id="MathJax-Element-25">\tau</script></li>
+</ol>
+
+
+
+<h3 id="实现细节"><div id="detail">实现细节</div></h3>
+
+<p>对于 <script type="math/tex" id="MathJax-Element-26">S</script> 中的字符串，我们可以对他们按照长度进行分组，相同长度的字符串划分成 <script type="math/tex" id="MathJax-Element-27">\tau+1</script> 份字符串的方式是相同的，然后再对 <script type="math/tex" id="MathJax-Element-28">\tau+1</script> 个不同位置的字符串分别用<code>Hash</code>建立反向列表。</p>
+
+<p>具体来说，<script type="math/tex" id="MathJax-Element-29">pos_{l,i}</script> 表示长度为 <script type="math/tex" id="MathJax-Element-30">l</script> 的字符串的第 <script type="math/tex" id="MathJax-Element-31">i</script> 个子串的起始位置， <script type="math/tex" id="MathJax-Element-32">len_{l,i}</script> 表示长度为 <script type="math/tex" id="MathJax-Element-33">l</script> 的字符串第 <script type="math/tex" id="MathJax-Element-34">i</script> 个子串的长度，<script type="math/tex" id="MathJax-Element-35">index_{l,i}</script> 表示 <script type="math/tex" id="MathJax-Element-36">S</script> 中所有长度为 <script type="math/tex" id="MathJax-Element-37">l</script> 的字符串的第 <script type="math/tex" id="MathJax-Element-38">i</script> 段子串构成的反向列表。</p>
+
+<p>对于一个查询的字符串 <script type="math/tex" id="MathJax-Element-39">r</script> ，只需在 <script type="math/tex" id="MathJax-Element-40">index_{[|s|-\tau,|s|+\tau], *}</script> 中查询即可，对于 <script type="math/tex" id="MathJax-Element-41">S</script> 中长度为 <script type="math/tex" id="MathJax-Element-42">l</script> 的字符串反向列表, 也只用枚举起点在 <script type="math/tex" id="MathJax-Element-43">[pos_{l,i}-\tau, pos_{l,i}+\tau]</script> 中的子串即可。</p>
+
+<p>对于最后的过滤，使用一个动态规划即可。</p>
+
+
+
+<h2 id="jaccard近似链接"><div id="part3">Jaccard&lt;近似链接&gt;</div></h2>
+
+<p>考虑对 <script type="math/tex" id="MathJax-Element-44">R</script> 和 <script type="math/tex" id="MathJax-Element-45">S</script> 两个集合中，对Jaccard距离不小于 <script type="math/tex" id="MathJax-Element-46">\tau</script> 的字符串进行链接。</p>
+
+<p>Jaccard定义如下：</p>
+
+
+
+<p><script type="math/tex; mode=display" id="MathJax-Element-47">\frac{|r \bigcap s|}{|r \bigcup s|} \ge \tau</script></p>
+
+<p>其中 <script type="math/tex" id="MathJax-Element-48">r</script> 是 <script type="math/tex" id="MathJax-Element-49">R</script> 中某行字符串的单词集合, <script type="math/tex" id="MathJax-Element-50">s</script> 类似;将上面的公式进行变换：</p>
+
+
+
+<p><script type="math/tex; mode=display" id="MathJax-Element-51">|r \bigcap s| \ge |r \bigcup s| \times \tau \ge \lceil max(|r|, |s|) \times \tau \rceil</script></p>
+
+<p>此公式表明，若要 <script type="math/tex" id="MathJax-Element-52">r</script> 和 <script type="math/tex" id="MathJax-Element-53">s</script> 之间Jaccard距离满足要求，则 <script type="math/tex" id="MathJax-Element-54">r</script> 的任意 <script type="math/tex" id="MathJax-Element-55">|r| - \lceil |r| \times \tau \rceil + 1</script> 个单词和 <script type="math/tex" id="MathJax-Element-56">s</script> 的任意 <script type="math/tex" id="MathJax-Element-57">|s| - \lceil |s| \times \tau \rceil + 1</script> 个单词必定存在一个完全相同的单词。</p>
+
+<p>由此，我们先统计出每个单词在 <script type="math/tex" id="MathJax-Element-58">R</script> 和 <script type="math/tex" id="MathJax-Element-59">S</script> 出现的次数，然后对于 <script type="math/tex" id="MathJax-Element-60">S</script> 中的每个字符串 <script type="math/tex" id="MathJax-Element-61">s \in S</script> ，将其出现次数最少的 <script type="math/tex" id="MathJax-Element-62">|s| - \lceil |s| \times \tau \rceil + 1</script> 个单词放入反向列表，然后对于 <script type="math/tex" id="MathJax-Element-63">R</script> 中的每个字符串 <script type="math/tex" id="MathJax-Element-64">r</script> ，将其出现次数最少的 <script type="math/tex" id="MathJax-Element-65">|r| - \lceil |r| \times \tau \rceil + 1</script> 个单词在反向列表中查询，对于查找到的结果在做一次过滤即可。</p></div></body>
+</html>
