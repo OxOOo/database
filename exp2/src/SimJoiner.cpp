@@ -22,8 +22,11 @@ SimJoiner::~SimJoiner() {
 }
 
 int SimJoiner::joinJaccard(const char *filename1, const char *filename2, double threshold, vector<JaccardJoinResult> &result) {
-    result.clear();
-    assert(false);
+    STR_FILE fileA = loadFile(filename1);
+    STR_FILE fileB = loadFile(filename2);
+
+    jac.join(fileA, fileB, threshold, result);
+
     return SUCCESS;
 }
 

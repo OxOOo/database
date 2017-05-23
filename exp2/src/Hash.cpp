@@ -4,7 +4,7 @@
 
 using namespace std;
 
-Hash::Hash()
+Hash::Hash(int MOD): MOD(MOD)
 {
     buckets = NULL;
     ds = de = NULL;

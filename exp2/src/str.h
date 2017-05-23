@@ -7,13 +7,14 @@
 struct STR
 {
     char *ptr;
+    int df;
     int length;
 };
 
 // 字符串集合
-struct STR_SET
+struct STR_LIST
 {
-    STR *sets;
+    STR *strs;
     int size;
 };
 
@@ -26,14 +27,8 @@ struct STR_FILE
     int line_size;
 };
 
-// gram
-struct GRAM
-{
-    char* ptr;
-    int df;
-    Trie::Node* node;
-};
+bool df_cmp(const STR&A, const STR&B);
 
-bool gram_cmp(const GRAM&A, const GRAM&B);
+void print(const STR&S, const char* tail = NULL);
 
 #endif // STR_H

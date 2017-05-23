@@ -4,6 +4,7 @@
 #include "common.h"
 #include "str.h"
 #include "ED.h"
+#include "Jaccard.h"
 
 #include <vector>
 
@@ -18,6 +19,7 @@ public:
 private:
     std::vector<STR_FILE> files;
     ED ed;
+    Jaccard jac;
 
     STR_FILE loadFile(const char *filename);
 };
