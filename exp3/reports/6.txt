@@ -1,0 +1,3 @@
+euclid_rst 3721.39 762.56
+normal_rst 2959.63 1337.11
+quick_rst 2959.63 873.167
